@@ -10,7 +10,7 @@ part of my journey toward CEH and OSCP certifications.
 | Machine | Difficulty | Key Techniques | Writeup |
 |---------|------------|----------------|---------|
 | Marlinspike | Beginner | ProFTPD backdoor, Metasploit | [Link](./Marlinspike/README.md) |
-| DC-1 | Beginner | Drupalgeddon2, SUID find privesc | [Link](./DC-1/README.md) |
+| DC-1 | Beginner | Drupalgeddon2, SUID find privesc | [https://github.com/Shahid-git-09/vulnhub-writeups/tree/main/DC-1](./DC-1/README.md) |
 
 ---
 
