@@ -233,6 +233,6 @@ cat the-flag.txt
 - **Kernel version is always worth checking** — `uname -a` should be one of your first commands on any shell. Old kernels on CTF machines are very often exploitable.
 - **CVE-2016-4557** — a local privilege escalation in Linux kernel ≤ 4.4.0-21 via the BPF `doubleput` vulnerability. Worth knowing by name for interviews.
 
----
+
 
 *Machine completed by Shahid | [GitHub](https://github.com/Shahid-git-09/vulnhub-writeups)*
